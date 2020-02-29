@@ -1,6 +1,6 @@
 {
   "name": "quant-eth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "index.ts",
   "author": "Uice Lu",
   "license": "MIT",
@@ -12,12 +12,16 @@
     "@okfe/okex-node": "^0.0.52",
     "@types/pako": "^1.0.1",
     "@types/ws": "^7.2.2",
+    "@types/yargs": "^15.0.4",
     "axios": "^0.19.2",
+    "change-case": "^4.1.1",
     "class-transformer": "^0.2.3",
     "dotenv": "^8.2.0",
+    "moment": "^2.24.0",
     "pako": "^1.0.11",
     "reconnecting-websocket": "^4.4.0",
-    "ws": "^7.2.1"
+    "ws": "^7.2.1",
+    "yargs": "^15.1.0"
   },
   "devDependencies": {
     "@types/node": "^13.7.6",

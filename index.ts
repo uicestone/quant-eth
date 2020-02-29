@@ -2,21 +2,14 @@ import dotenv from "dotenv";
 import { inflateRaw } from "pako";
 import axios from "axios";
 import Trader from "./class/Trader";
-
 import WebSocket from "ws";
 import ReconnectingWebSocket from "reconnecting-websocket";
+import config, { initConfig } from "./config";
 
 dotenv.config();
+initConfig();
 
 // const pClient = PublicClient();
-const apiKey = process.env.API_KEY;
-const secretKey = process.env.SECRET_KEY;
-const passphrase = process.env.PASSPHRASE;
-
-if (!apiKey || !secretKey || !passphrase) {
-  throw "Missing api config.";
-}
-
 const wss = new ReconnectingWebSocket("wss://real.okex.com:8443/ws/v3", [], {
   WebSocket
 });
@@ -25,7 +18,8 @@ const http = axios.create({
   baseURL: "https://www.okex.com/api/"
 });
 
-const t = new Trader({ lever: 20, spacing: 0.05, lot: 10 });
+const { directionMode, lever, spacing, lot } = config;
+const t = new Trader(directionMode, lever, spacing, lot);
 
 // http.get("swap/v3/instruments/ticker").then(res => {
 //   console.log(res.data.map((i: any) => i));
@@ -33,7 +27,7 @@ const t = new Trader({ lever: 20, spacing: 0.05, lot: 10 });
 
 const startInterval = setInterval(() => {
   if (t.last) {
-    t.start("SELL");
+    t.start();
     clearInterval(startInterval);
   }
 }, 3e3);

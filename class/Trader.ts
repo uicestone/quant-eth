@@ -1,20 +1,19 @@
+import moment from "moment";
 import Worker from "./Worker";
 import Order from "./Order";
+import { DirectionMode } from "../config";
 
 export default class Trader {
-  constructor(config: { lever: number; spacing: number; lot: number }) {
-    const { lever, spacing, lot } = config;
-    this.lever = lever;
-    this.spacing = spacing;
-    this.lot = lot;
+  constructor(
+    public directionMode: DirectionMode,
+    public lever: number,
+    public spacing: number,
+    public lot: number
+  ) {
     setInterval(() => {
       this.info();
-    }, 2e4);
+    }, 2e4); // 每20秒输出持仓信息
   }
-
-  lever: number;
-  spacing: number;
-  lot: number;
 
   last?: number;
 
@@ -30,7 +29,17 @@ export default class Trader {
     }
   }
 
-  start(direction: "BUY" | "SELL", price?: number) {
+  start(price?: number) {
+    let direction: "BUY" | "SELL";
+    if (this.directionMode === DirectionMode.BUY) {
+      direction = "BUY";
+    } else if (this.directionMode === DirectionMode.SELL) {
+      direction = "SELL";
+    } else if (this.directionMode === DirectionMode.RANDOM) {
+      direction = Math.random() > 0.5 ? "BUY" : "SELL";
+    } else {
+      throw `Direction mode ${this.directionMode} not supported.`;
+    }
     console.log(`Start trade: ${direction}`);
     const w = new Worker(this);
     w.open(direction);
@@ -60,6 +69,7 @@ export default class Trader {
   info() {
     const openWorkers = this.workers.filter(w => w.status === "OPEN");
     const closedWorkers = this.workers.filter(w => w.status === "CLOSED");
+    const readyWorkers = this.workers.filter(w => w.status === "READY");
     const openProfit =
       Math.floor(
         openWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
@@ -75,12 +85,14 @@ export default class Trader {
       })
       .join("/");
     console.info(
-      `[${new Date()}] ${openWorkers.length} open workers, ${openInfo}, ${
+      `[${moment().format("YYYY-MM-DD HH:mm:ss")}] ${openWorkers.length}|${
         closedWorkers.length
-      } closed workers, open profit ${openProfit}, closed profit ${closedProfit}`
+      }|${
+        readyWorkers.length
+      } workers, ${openInfo}, open profit ${openProfit}, closed profit ${closedProfit}`
     );
     if (openWorkers.length === 0) {
-      this.start("SELL");
+      this.start();
     }
   }
 }

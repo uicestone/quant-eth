@@ -1,5 +1,6 @@
 import Trader from "./Trader";
 import Order from "./Order";
+import config from "../config";
 
 export default class Worker {
   constructor(trader: Trader) {
@@ -19,7 +20,9 @@ export default class Worker {
           (o.direction === "SELL" && p > o.price))
       ) {
         o.status = "FILLED";
-        o.fee = Math.ceil(((o.amount * 10) / o.price) * 2e-4 * 1e6) / 1e6;
+        o.fee =
+          Math.ceil(((o.amount * config.usdPerAmount) / o.price) * 2e-4 * 1e6) /
+          1e6;
         console.log(`${state} order filled:`, o.summary);
         if (state === "OPEN") {
           this.status = "OPEN";
@@ -40,16 +43,18 @@ export default class Worker {
   // 返回实时利润，单位ETH
   get profit() {
     if (!this.trader.last) return;
-    if (!this.openOrder || this.openOrder.status !== "FILLED") return;
+    if (this.openOrder?.status !== "FILLED") return;
     const openPrice = this.openOrder.price;
     const closePrice =
-      this.closeOrder && this.closeOrder.status === "FILLED"
+      this.closeOrder?.status === "FILLED"
         ? this.closeOrder.price
         : this.trader.last;
 
     const rawProfit =
       Math.floor(
-        (((closePrice - openPrice) * this.openOrder.amount * 10) /
+        (((closePrice - openPrice) *
+          this.openOrder.amount *
+          config.usdPerAmount) /
           openPrice /
           closePrice) *
           (this.openOrder.direction === "BUY" ? 1 : -1) *
