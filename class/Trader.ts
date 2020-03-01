@@ -108,7 +108,7 @@ export default class Trader {
       }|${readyWorkers.length}|${closedWorkers.length}, ${openInfo ||
         "-"}, profit ${this.openProfit}/${this.closedProfit}, ${(
         this.profitRate * 100
-      ).toFixed(2)}%`
+      ).toFixed(2)}%, ${(this.fund + this.profit).toFixed(4)}`
     );
     if (this.profitRate < -config.overLoss) {
       console.log(
