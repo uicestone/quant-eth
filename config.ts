@@ -39,11 +39,22 @@ export function initConfig() {
     throw "Invalid api config.";
   }
 
-  for (const key of ["directionMode", "lot", "spacing", "overLoss", "fund"]) {
+  for (const key of ["lot", "spacing", "overLoss", "fund"]) {
     if (argv[key] !== undefined) {
       // @ts-ignore
       config[key] = argv[key];
     }
+  }
+
+  if (argv.directionMode) {
+    const d = argv.directionMode as "A" | "R" | "B" | "S";
+    const map = {
+      A: DirectionMode.AUTO,
+      R: DirectionMode.RANDOM,
+      B: DirectionMode.BUY,
+      S: DirectionMode.SELL
+    };
+    config.directionMode = map[d];
   }
 
   console.log("Config init:", config);
@@ -56,7 +67,7 @@ function initArgs() {
       alias: "d",
       describe: "开仓方向，可选B|S|A|R",
       type: "string",
-      default: "A"
+      default: "R"
     })
     .option("lot", {
       alias: "l",

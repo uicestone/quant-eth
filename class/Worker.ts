@@ -30,6 +30,7 @@ export default class Worker {
           this.trader.requestBackup(this);
         } else {
           this.status = "CLOSED";
+          this.trader.workerClosed(this);
         }
       }
     });

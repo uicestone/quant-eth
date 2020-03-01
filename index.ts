@@ -18,8 +18,8 @@ const http = axios.create({
   baseURL: "https://www.okex.com/api/"
 });
 
-const { directionMode, lever, spacing, lot } = config;
-const t = new Trader(directionMode, lever, spacing, lot);
+const { directionMode, lever, spacing, lot, fund } = config;
+const t = new Trader(directionMode, lever, spacing, lot, fund);
 
 // http.get("swap/v3/instruments/ticker").then(res => {
 //   console.log(res.data.map((i: any) => i));

@@ -1,14 +1,15 @@
 import moment from "moment";
 import Worker from "./Worker";
 import Order from "./Order";
-import { DirectionMode } from "../config";
+import config, { DirectionMode } from "../config";
 
 export default class Trader {
   constructor(
     public directionMode: DirectionMode,
     public lever: number,
     public spacing: number,
-    public lot: number
+    public lot: number,
+    public fund: number
   ) {
     setInterval(() => {
       this.info();
@@ -66,18 +67,36 @@ export default class Trader {
     this.workers.push(w);
   }
 
+  get profit() {
+    return Math.floor((this.openProfit + this.closedProfit) * 1e6) / 1e6;
+  }
+
+  get profitRate() {
+    return this.profit / this.fund;
+  }
+
+  get openProfit() {
+    const openWorkers = this.workers.filter(w => w.status === "OPEN");
+    return (
+      Math.floor(
+        openWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
+      ) / 1e6
+    );
+  }
+
+  get closedProfit() {
+    const closedWorkers = this.workers.filter(w => w.status === "CLOSED");
+    return (
+      Math.floor(
+        closedWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
+      ) / 1e6
+    );
+  }
+
   info() {
     const openWorkers = this.workers.filter(w => w.status === "OPEN");
     const closedWorkers = this.workers.filter(w => w.status === "CLOSED");
     const readyWorkers = this.workers.filter(w => w.status === "READY");
-    const openProfit =
-      Math.floor(
-        openWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
-      ) / 1e6;
-    const closedProfit =
-      Math.floor(
-        closedWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
-      ) / 1e6;
     const openInfo = openWorkers
       .map(w => {
         if (!w.openOrder) throw "no_open_order";
@@ -85,13 +104,27 @@ export default class Trader {
       })
       .join("/");
     console.info(
-      `[${moment().format("YYYY-MM-DD HH:mm:ss")}] ${openWorkers.length}|${
-        closedWorkers.length
-      }|${
-        readyWorkers.length
-      } workers, ${openInfo}, open profit ${openProfit}, closed profit ${closedProfit}`
+      `[${moment().format("YYYY-MM-DD HH:mm:ss")}] workers ${
+        openWorkers.length
+      }|${closedWorkers.length}|${readyWorkers.length}, ${openInfo}, profit ${
+        this.openProfit
+      }/${this.closedProfit}, ${(this.profitRate * 100).toFixed(2)}%`
     );
+    if (this.profitRate < -config.overLoss) {
+      console.log(
+        `Profit rate ${this.profitRate} hit loss line, close all orders.`
+      );
+      // 平仓所有订单
+      process.exit();
+    }
+  }
+
+  workerClosed(worker: Worker) {
+    const openWorkers = this.workers.filter(w => w.status === "OPEN");
     if (openWorkers.length === 0) {
+      this.fund += this.profit;
+      this.orders = [];
+      this.workers = [];
       this.start();
     }
   }
