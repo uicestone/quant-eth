@@ -1,4 +1,3 @@
-import moment from "moment";
 import Worker from "./Worker";
 import Order from "./Order";
 import config, { DirectionMode } from "../config";
@@ -103,10 +102,9 @@ export default class Trader {
       })
       .join("/");
     console.info(
-      `[${moment().format("YYYY-MM-DD HH:mm:ss")}] workers ${
-        openWorkers.length
-      }|${readyWorkers.length}|${closedWorkers.length}, ${openInfo ||
-        "-"}, profit ${this.openProfit}/${this.closedProfit}, ${(
+      `workers ${openWorkers.length}|${readyWorkers.length}|${
+        closedWorkers.length
+      }, ${openInfo || "-"}, profit ${this.openProfit}/${this.closedProfit}, ${(
         this.profitRate * 100
       ).toFixed(2)}%, ${(this.fund + this.profit).toFixed(4)}`
     );
