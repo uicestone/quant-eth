@@ -36,10 +36,6 @@ export function initConfig() {
     }
   }
 
-  if (!config.apiKey || !config.secretKey || !config.passphrase) {
-    throw "Invalid api config.";
-  }
-
   for (const key of ["lot", "spacing", "overLoss", "fund"]) {
     if (argv[key] !== undefined) {
       // @ts-ignore
@@ -56,6 +52,14 @@ export function initConfig() {
       S: DirectionMode.SELL
     };
     config.directionMode = map[d];
+  }
+
+  if (!config.apiKey || !config.secretKey || !config.passphrase) {
+    throw "Invalid api config.";
+  }
+
+  if (!config.fund) {
+    throw "Fund not configured.";
   }
 
   console.log("Config init:", config);
