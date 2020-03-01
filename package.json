@@ -1,12 +1,13 @@
 {
   "name": "quant-eth",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "index.ts",
   "author": "Uice Lu",
   "license": "MIT",
   "scripts": {
     "start": "ts-node index.ts",
-    "dev": "nodemon --watch ./ -e ts --exec 'ts-node ./'"
+    "dev": "nodemon --watch ./ -e ts --exec 'ts-node ./'",
+    "build": "tsc"
   },
   "dependencies": {
     "@okfe/okex-node": "^0.0.52",
