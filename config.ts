@@ -14,6 +14,7 @@ const config = {
   lever: 20, // 杠杆
   spacing: 0.1, // 开单间距
   lot: 100, // 每笔张数
+  maxOpenWorkers: 3, // 最大开单线程数
   usdPerAmount: 10, // 每张面值
   overLoss: 0.15, // 全仓止损线
   fund: 0, // 本金
@@ -86,6 +87,12 @@ function initArgs() {
       describe: "全仓止损线",
       type: "number",
       default: 0.15
+    })
+    .option("max-workers", {
+      alias: "m",
+      describe: "最大开单线程数",
+      type: "number",
+      default: 3
     })
     .option("fund", {
       alias: "f",

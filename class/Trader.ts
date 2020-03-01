@@ -18,7 +18,7 @@ export default class Trader {
 
   last?: number;
 
-  maxOpenWorkers = 3;
+  maxOpenWorkers = config.maxOpenWorkers;
   workers: Worker[] = [];
   orders: Order[] = [];
 
@@ -106,9 +106,10 @@ export default class Trader {
     console.info(
       `[${moment().format("YYYY-MM-DD HH:mm:ss")}] workers ${
         openWorkers.length
-      }|${closedWorkers.length}|${readyWorkers.length}, ${openInfo}, profit ${
-        this.openProfit
-      }/${this.closedProfit}, ${(this.profitRate * 100).toFixed(2)}%`
+      }|${readyWorkers.length}|${closedWorkers.length}, ${openInfo ||
+        "-"}, profit ${this.openProfit}/${this.closedProfit}, ${(
+        this.profitRate * 100
+      ).toFixed(2)}%`
     );
     if (this.profitRate < -config.overLoss) {
       console.log(
