@@ -1,6 +1,7 @@
 import Trader from "./Trader";
 import Order from "./Order";
 import config from "../config";
+import { floor, ceil } from "../helpers";
 
 export default class Worker {
   constructor(trader: Trader) {
@@ -20,9 +21,7 @@ export default class Worker {
           (o.direction === "SELL" && p > o.price))
       ) {
         o.status = "FILLED";
-        o.fee =
-          Math.ceil(((o.amount * config.usdPerAmount) / o.price) * 2e-4 * 1e6) /
-          1e6;
+        o.fee = ceil(((o.amount * config.usdPerAmount) / o.price) * 2e-4, 6);
         console.log(`${state} order filled:`, o.summary);
         if (state === "OPEN") {
           this.status = "OPEN";
@@ -51,16 +50,15 @@ export default class Worker {
         ? this.closeOrder.price
         : this.trader.last;
 
-    const rawProfit =
-      Math.floor(
-        (((closePrice - openPrice) *
-          this.openOrder.amount *
-          config.usdPerAmount) /
-          openPrice /
-          closePrice) *
-          (this.openOrder.direction === "BUY" ? 1 : -1) *
-          1e4
-      ) / 1e4;
+    const rawProfit = floor(
+      (((closePrice - openPrice) *
+        this.openOrder.amount *
+        config.usdPerAmount) /
+        openPrice /
+        closePrice) *
+        (this.openOrder.direction === "BUY" ? 1 : -1),
+      4
+    );
     return (
       rawProfit -
       (this.openOrder.fee || 0) -

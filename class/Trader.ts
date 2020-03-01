@@ -2,6 +2,7 @@ import moment from "moment";
 import Worker from "./Worker";
 import Order from "./Order";
 import config, { DirectionMode } from "../config";
+import { floor } from "../helpers";
 
 export default class Trader {
   constructor(
@@ -68,7 +69,7 @@ export default class Trader {
   }
 
   get profit() {
-    return Math.floor((this.openProfit + this.closedProfit) * 1e6) / 1e6;
+    return floor(this.openProfit + this.closedProfit, 6);
   }
 
   get profitRate() {
@@ -77,19 +78,17 @@ export default class Trader {
 
   get openProfit() {
     const openWorkers = this.workers.filter(w => w.status === "OPEN");
-    return (
-      Math.floor(
-        openWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
-      ) / 1e6
+    return floor(
+      openWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0),
+      6
     );
   }
 
   get closedProfit() {
     const closedWorkers = this.workers.filter(w => w.status === "CLOSED");
-    return (
-      Math.floor(
-        closedWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0) * 1e6
-      ) / 1e6
+    return floor(
+      closedWorkers.reduce((acc, cur) => acc + (cur.profit || 0), 0),
+      6
     );
   }
 
