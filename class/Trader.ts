@@ -112,18 +112,21 @@ export default class Trader {
       console.log(
         `Profit rate ${this.profitRate} hit loss line, close all orders.`
       );
-      // 平仓所有订单
-      process.exit();
+      this.terminateAndRestart();
     }
   }
 
   workerClosed(worker: Worker) {
     const openWorkers = this.workers.filter(w => w.status === "OPEN");
     if (openWorkers.length === 0) {
-      this.fund += this.profit;
-      this.orders = [];
-      this.workers = [];
-      this.start();
+      this.terminateAndRestart();
     }
+  }
+
+  terminateAndRestart() {
+    this.fund += this.profit;
+    this.orders = [];
+    this.workers = [];
+    this.start();
   }
 }
