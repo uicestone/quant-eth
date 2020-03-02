@@ -1,6 +1,6 @@
 {
   "name": "quant-eth",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "index.ts",
   "author": "Uice Lu",
   "license": "MIT",
@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "@okfe/okex-node": "^0.0.52",
+    "@types/crypto-js": "^3.1.43",
     "@types/pako": "^1.0.1",
     "@types/ws": "^7.2.2",
     "@types/yargs": "^15.0.4",
     "axios": "^0.19.2",
     "change-case": "^4.1.1",
     "class-transformer": "^0.2.3",
+    "crypto-js": "^4.0.0",
     "dotenv": "^8.2.0",
     "moment": "^2.24.0",
     "pako": "^1.0.11",
