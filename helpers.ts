@@ -12,3 +12,9 @@ export function ceil(input: number, precision: number) {
   const magnifier = Math.pow(10, precision);
   return Math.ceil(input * magnifier) / magnifier;
 }
+
+export async function sleep(timeout: number) {
+  return new Promise(resolve => {
+    setTimeout(resolve, timeout);
+  });
+}

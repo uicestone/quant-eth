@@ -1,40 +1,39 @@
 import dotenv from "dotenv";
+import config, { initConfig } from "./config";
+dotenv.config();
+initConfig();
+
 import { inflateRaw } from "pako";
-import axios from "axios";
 import Trader from "./class/Trader";
 import WebSocket from "ws";
 import ReconnectingWebSocket from "reconnecting-websocket";
-import config, { initConfig } from "./config";
-import { createHmac } from "crypto";
 import { HmacSHA256, enc } from "crypto-js";
-
-dotenv.config();
-initConfig();
+import api from "./api";
 
 // const pClient = PublicClient();
 const wss = new ReconnectingWebSocket("wss://real.okex.com:8443/ws/v3", [], {
   WebSocket
 });
 
-const http = axios.create({
-  baseURL: "https://www.okex.com/api/"
-});
+const t = new Trader(
+  config.directionMode,
+  config.lever,
+  config.spacing,
+  config.lot,
+  config.fund
+);
 
-const {
-  directionMode,
-  lever,
-  spacing,
-  lot,
-  fund,
-  apiKey,
-  secretKey,
-  passphrase
-} = config;
-const t = new Trader(directionMode, lever, spacing, lot, fund);
-
-// http.get("swap/v3/instruments/ticker").then(res => {
-//   console.log(res.data.map((i: any) => i));
-// });
+(async () => {
+  try {
+    if (!config.mock) {
+      const res: any = await api.get("swap/v3/ETH-USD-SWAP/accounts");
+      const equity = +res.info.equity;
+      t.fund = equity;
+    }
+  } catch (err) {
+    console.log(err);
+  }
+})();
 
 const startInterval = setInterval(() => {
   if (t.last) {
@@ -73,13 +72,17 @@ wss.addEventListener("message", ({ data: raw }) => {
     wss.send(
       JSON.stringify({
         op: "subscribe",
-        args: ["swap/position:ETH-USD-SWAP"]
+        args: ["swap/position:ETH-USD-SWAP", "swap/order:ETH-USD-SWAP"]
       })
     );
   } else if (data.event === "subscribe") {
     console.log("Subscribed:", data.channel);
+  } else if (data.table === "swap/position") {
+    t.updatePosition(data.data);
+  } else if (data.table === "swap/order") {
+    t.updateOrders(data.data);
   } else if (typeof data === "object") {
-    console.log(data);
+    console.log(data); // TODO remove multiline logs
   }
 });
 
@@ -91,16 +94,18 @@ wss.addEventListener("open", () => {
       args: ["swap/trade:ETH-USD-SWAP"]
     })
   );
-  const timestamp = (Date.now() / 1e3).toString();
-  const sign = enc.Base64.stringify(
-    HmacSHA256(timestamp + "GET/users/self/verify", secretKey)
-  );
-  wss.send(
-    JSON.stringify({
-      op: "login",
-      args: [apiKey, passphrase, timestamp, sign]
-    })
-  );
+  if (!config.mock) {
+    const timestamp = (Date.now() / 1e3).toString();
+    const sign = enc.Base64.stringify(
+      HmacSHA256(timestamp + "GET/users/self/verify", config.secretKey)
+    );
+    wss.send(
+      JSON.stringify({
+        op: "login",
+        args: [config.apiKey, config.passphrase, timestamp, sign]
+      })
+    );
+  }
   setInterval(() => {
     wss.send("ping");
   }, 6e4);

@@ -2,6 +2,7 @@ import Worker from "./Worker";
 import Order from "./Order";
 import config, { DirectionMode } from "../config";
 import { floor } from "../helpers";
+import api from "../api";
 
 export default class Trader {
   constructor(
@@ -13,7 +14,7 @@ export default class Trader {
   ) {
     setInterval(() => {
       this.info();
-    }, 2e4); // 每20秒输出持仓信息
+    }, 6e4); // 每60秒输出持仓信息
   }
 
   last?: number;
@@ -30,6 +31,96 @@ export default class Trader {
     }
   }
 
+  // 挂单信息更新
+  updateOrders(
+    orders: {
+      client_oid: string;
+      contract_val: string;
+      error_code: string;
+      fee: string;
+      filled_qty: string;
+      instrument_id: string;
+      last_fill_px: string;
+      last_fill_qty: string;
+      last_fill_time: string;
+      order_id: string;
+      order_type: string;
+      price: string;
+      price_avg: string;
+      size: string;
+      state: string;
+      status: string;
+      timestamp: string;
+      type: string;
+    }[]
+  ) {
+    for (const o of orders) {
+      if (!o.client_oid) {
+        console.log("Order is not made from quant, skipping updating.");
+        continue;
+      }
+      const order = this.orders.find(i => i.id === o.client_oid);
+      if (!order) {
+        console.log(`Order ${o.client_oid} not found under this trader.`);
+        continue;
+      }
+      if (+o.filled_qty > 0) {
+        if (+o.filled_qty < +o.size) {
+          order.updateStatus("PARTLY_FILLED");
+          console.log(
+            `${order.state} order partly filled: ${order.summary}/${o.filled_qty}`
+          );
+        } else {
+          console.log(
+            `${order.state} order filled: ${order.summary}/${o.filled_qty}`
+          );
+          order.updateStatus("FILLED");
+          order.fee = +o.fee;
+        }
+      }
+    }
+  }
+
+  // 持仓信息更新
+  updatePosition(
+    position: [
+      {
+        holding: [
+          {
+            avail_position: string;
+            avg_cost: string;
+            last: string;
+            leverage: string;
+            liquidation_price: string;
+            maint_margin_ratio: string;
+            margin: string;
+            position: string;
+            realized_pnl: string;
+            settled_pnl: string;
+            settlement_price: string;
+            side: string;
+            timestamp: string;
+          }
+        ];
+        instrument_id: "ETH-USD-SWAP";
+        margin_mode: "crossed";
+        timestamp: "2020-03-03T09:50:34.862Z";
+      }
+    ]
+  ) {
+    if (!position[0].holding[0]) {
+      return;
+    }
+    const p = position[0].holding[0];
+    console.log(
+      `Position: ${p.avg_cost}x${p.side === "long" ? "-" : ""}${
+        p.avail_position
+      }@/${p.avail_position} ${p.liquidation_price}/${p.last} ${
+        p.realized_pnl
+      }.`
+    );
+  }
+
   start(price?: number) {
     let direction: "BUY" | "SELL";
     if (this.directionMode === DirectionMode.BUY) {
@@ -41,7 +132,11 @@ export default class Trader {
     } else {
       throw `Direction mode ${this.directionMode} not supported.`;
     }
-    console.log(`Start trade: ${direction}`);
+    console.log(
+      `Start trade: ${direction === "SELL" ? "-" : ""}${this.lot}x${
+        this.lever
+      }@${this.spacing}`
+    );
     const w = new Worker(this);
     w.open(direction);
     this.workers.push(w);
@@ -102,11 +197,11 @@ export default class Trader {
       })
       .join("/");
     console.info(
-      `workers ${openWorkers.length}|${readyWorkers.length}|${
+      `Workers ${openWorkers.length}|${readyWorkers.length}|${
         closedWorkers.length
-      }, ${openInfo || "-"}, profit ${this.openProfit}/${this.closedProfit}, ${(
+      }, ${openInfo || "-"}, Profit ${this.openProfit}/${this.closedProfit}, ${(
         this.profitRate * 100
-      ).toFixed(2)}%, ${(this.fund + this.profit).toFixed(4)}`
+      ).toFixed(2)}%, ${(this.fund + this.profit).toFixed(4)}.`
     );
     if (this.profitRate < -config.overLoss) {
       console.log(
@@ -123,8 +218,14 @@ export default class Trader {
     }
   }
 
-  terminateAndRestart() {
+  async terminateAndRestart() {
     this.fund += this.profit;
+    const madeOrderIds = this.orders
+      .filter(o => o.status === "MADE")
+      .map(o => o.id);
+    await api.post("swap/v3/cancel_batch_orders/ETH-USD-SWAP", {
+      client_oids: madeOrderIds
+    });
     this.orders = [];
     this.workers = [];
     this.start();

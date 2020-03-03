@@ -20,7 +20,8 @@ const config = {
   fund: 0, // 本金
   apiKey: "", // OKEX API 鉴权信息
   secretKey: "",
-  passphrase: ""
+  passphrase: "",
+  mock: true
 };
 
 initArgs();
@@ -28,6 +29,8 @@ export default config;
 
 export function initConfig() {
   // load config from process.env
+  config.mock = !!+(process.env.MOCK || 0);
+
   for (const key in config) {
     const envValue = process.env[constantCase(key)];
     if (envValue) {
@@ -62,7 +65,7 @@ export function initConfig() {
     throw "Fund not configured.";
   }
 
-  console.log("Config init:", config);
+  console.log("Config init:", JSON.stringify(config));
 }
 
 function initArgs() {
@@ -71,32 +74,32 @@ function initArgs() {
     .option("direction-mode", {
       alias: "d",
       describe: "开仓方向，可选B|S|A|R",
-      type: "string",
-      default: "R"
+      type: "string"
+      // default: "R"
     })
     .option("lot", {
       alias: "l",
       describe: "每笔张数",
-      type: "number",
-      default: 100
+      type: "number"
+      // default: 100
     })
     .option("spacing", {
       alias: "s",
       describe: "开单间距",
-      type: "number",
-      default: 0.1
+      type: "number"
+      // default: 0.1
     })
     .option("overLoss", {
       alias: "o",
       describe: "全仓止损线",
-      type: "number",
-      default: 0.15
+      type: "number"
+      // default: 0.15
     })
     .option("max-workers", {
       alias: "m",
       describe: "最大开单线程数",
-      type: "number",
-      default: 3
+      type: "number"
+      // default: 3
     })
     .option("fund", {
       alias: "f",

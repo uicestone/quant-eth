@@ -1,40 +1,14 @@
 import Trader from "./Trader";
 import Order from "./Order";
 import config from "../config";
-import { floor, ceil } from "../helpers";
+import { floor, ceil, sleep } from "../helpers";
 
 export default class Worker {
   constructor(trader: Trader) {
     this.trader = trader;
   }
   trader: Trader;
-  notifyLast() {
-    if (!this.trader.last) throw "no_price";
-    [this.openOrder, this.closeOrder].forEach((o, index) => {
-      if (!o) return;
-      const state = o.state;
-      const p = this.trader.last;
-      if (!p) throw "no_price";
-      if (
-        o.status === "MADE" &&
-        ((o.direction === "BUY" && p < o.price) ||
-          (o.direction === "SELL" && p > o.price))
-      ) {
-        o.status = "FILLED";
-        o.fee = ceil(((o.amount * config.usdPerAmount) / o.price) * 2e-4, 6);
-        console.log(`${state} order filled:`, o.summary);
-        if (state === "OPEN") {
-          this.status = "OPEN";
-          this.close();
-          this.trader.requestBackup(this);
-        } else {
-          this.status = "CLOSED";
-          this.trader.workerClosed(this);
-        }
-      }
-    });
-  }
-  makeOffset = 0.05;
+  makeOffset = 0.02;
   openOrder?: Order;
   closeOrder?: Order;
 
@@ -66,19 +40,20 @@ export default class Worker {
     );
   }
 
-  open(direction: "BUY" | "SELL", price?: number) {
+  async open(direction: "BUY" | "SELL", price?: number) {
     if (!price) {
       if (!this.trader.last) throw "no_price";
       if (direction === "BUY") price = this.trader.last - this.makeOffset;
       else price = this.trader.last + this.makeOffset;
     }
     const amount = this.trader.lot;
-    this.openOrder = new Order({ state: "OPEN", direction, price, amount });
+    this.openOrder = new Order(this, direction, "OPEN", price, amount);
     this.trader.orders.push(this.openOrder);
-    console.log(`OPEN order made:`, this.openOrder.summary);
+    await this.openOrder.submit();
+    console.log(`OPEN order submit:`, this.openOrder.summary);
   }
 
-  close() {
+  async close() {
     if (!this.openOrder) throw "no_open_order";
     if (this.openOrder.status !== "FILLED") throw "open_order_not_filled";
     const direction = this.openOrder.direction === "BUY" ? "SELL" : "BUY";
@@ -88,8 +63,43 @@ export default class Worker {
         (this.trader.spacing / this.trader.lever) *
           (direction === "BUY" ? -1 : 1));
     const amount = this.trader.lot;
-    this.closeOrder = new Order({ state: "CLOSE", direction, price, amount });
+    this.closeOrder = new Order(this, direction, "CLOSE", price, amount);
     this.trader.orders.push(this.closeOrder);
-    console.log(`CLOSE order made:`, this.closeOrder.summary);
+    await this.closeOrder.submit();
+    console.log(`CLOSE order submit:`, this.closeOrder.summary);
+  }
+
+  notifyLast() {
+    if (!this.trader.last) throw "no_price";
+    if (config.mock) {
+      [(this.openOrder, this.closeOrder)].forEach((o, index) => {
+        if (!o) return;
+        const state = o.state;
+        const p = this.trader.last;
+        if (!p) throw "no_price";
+        if (
+          o.status === "MADE" &&
+          ((o.direction === "BUY" && p < o.price) ||
+            (o.direction === "SELL" && p > o.price))
+        ) {
+          o.fee = ceil(((o.amount * config.usdPerAmount) / o.price) * 2e-4, 6);
+          o.updateStatus("FILLED");
+          console.log(`${state} order filled:`, o.summary);
+        }
+      });
+    }
+  }
+
+  async orderStatusUpdated(order: Order) {
+    if (order.status === "FILLED") {
+      if (order.state === "OPEN") {
+        this.status = "OPEN";
+        await this.close();
+        this.trader.requestBackup(this);
+      } else {
+        this.status = "CLOSED";
+        this.trader.workerClosed(this);
+      }
+    }
   }
 }
