@@ -39,7 +39,9 @@ client.interceptors.response.use(
     return res.data;
   },
   req => {
-    console.error(req.response.data.error_message);
+    if (req.response.data.error_message) {
+      console.error(req.response.data.error_message);
+    }
     return Promise.reject(req.response.data);
   }
 );

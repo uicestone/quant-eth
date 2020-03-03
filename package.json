@@ -21,6 +21,7 @@
     "class-transformer": "^0.2.3",
     "crypto-js": "^4.0.0",
     "dotenv": "^8.2.0",
+    "finmath": "^2.0.0",
     "moment": "^2.24.0",
     "pako": "^1.0.11",
     "reconnecting-websocket": "^4.4.0",

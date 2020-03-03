@@ -4,11 +4,15 @@ dotenv.config();
 initConfig();
 
 import { inflateRaw } from "pako";
-import Trader from "./class/Trader";
+import moment from "moment";
 import WebSocket from "ws";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import { HmacSHA256, enc } from "crypto-js";
+// @ts-ignore
+import { boll } from "finmath";
+import Trader from "./class/Trader";
 import api from "./api";
+import { round } from "./helpers";
 
 // const pClient = PublicClient();
 const wss = new ReconnectingWebSocket("wss://real.okex.com:8443/ws/v3", [], {
@@ -26,10 +30,35 @@ const t = new Trader(
 (async () => {
   try {
     if (!config.mock) {
-      const res: any = await api.get("swap/v3/ETH-USD-SWAP/accounts");
-      const equity = +res.info.equity;
+      const resAccounts: any = await api.get("swap/v3/ETH-USD-SWAP/accounts");
+      const equity = +resAccounts.info.equity;
       t.fund = equity;
     }
+
+    const resCandle = (await api.get(
+      "swap/v3/instruments/ETH-USD-SWAP/candles",
+      {
+        params: {
+          start: moment()
+            .subtract(6, "hours")
+            .toISOString(),
+          end: moment().toISOString(),
+          granularity: 15 * 60
+        }
+      }
+    )) as string[][];
+    console.log(resCandle.length, "candles", resCandle[0]);
+    const recentCloses = resCandle
+      .map(k => +k[4])
+      .reverse()
+      .slice(-20);
+    const b = boll(recentCloses);
+    console.log(
+      "BOLL:",
+      round(b.upper[recentCloses.length - 1], 2),
+      round(b.mid[recentCloses.length - 1], 2),
+      round(b.lower[recentCloses.length - 1], 2)
+    );
   } catch (err) {
     console.log(err);
   }
@@ -81,6 +110,8 @@ wss.addEventListener("message", ({ data: raw }) => {
     t.updatePosition(data.data);
   } else if (data.table === "swap/order") {
     t.updateOrders(data.data);
+  } else if (data.table === "swap/candle900s") {
+    // console.log(data.data[0].candle);
   } else if (typeof data === "object") {
     console.log(data); // TODO remove multiline logs
   }
@@ -91,7 +122,10 @@ wss.addEventListener("open", () => {
   wss.send(
     JSON.stringify({
       op: "subscribe",
-      args: ["swap/trade:ETH-USD-SWAP"]
+      args: [
+        "swap/trade:ETH-USD-SWAP"
+        // "swap/candle900s:ETH-USD-SWAP"
+      ]
     })
   );
   if (!config.mock) {

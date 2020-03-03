@@ -456,6 +456,13 @@ find-up@^4.1.0:
     locate-path "^5.0.0"
     path-exists "^4.0.0"
 
+finmath@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/finmath/-/finmath-2.0.0.tgz#c7e382f6e77aaea340c0c91efb4862b5eb0c199a"
+  integrity sha512-B4CuoWWwOzCJnd1uCRbcRj6Ehx2pa7AolptpL4Qn+/SzTpAp0obZ4xUBgi/ZvLePki+MoD7BPtnKFcnVxp86jA==
+  dependencies:
+    math-array "^1.1.2"
+
 follow-redirects@1.5.10:
   version "1.5.10"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.5.10.tgz#7b7a9f9aea2fdff36786a94ff643ed07f4ff5e2a"
@@ -683,6 +690,11 @@ make-error@^1.1.1:
   version "1.3.6"
   resolved "https://registry.yarnpkg.com/make-error/-/make-error-1.3.6.tgz#2eb2e37ea9b67c4891f684a1394799af484cf7a2"
   integrity sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==
+
+math-array@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/math-array/-/math-array-1.1.2.tgz#6733ceea882ef26b55d70b9277059c63536d32ed"
+  integrity sha512-54uCZjFRNbL4hEzUnaPYDR4MbGBFMnlUOfrk3kDfkB5v3QwaMKwZLIPIWK9WfM1skxxzfV01k05FbCEQGX/4qg==
 
 minimatch@^3.0.4:
   version "3.0.4"
