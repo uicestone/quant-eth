@@ -53,7 +53,7 @@ const t = new Trader(
             .reverse()
             .slice(-20);
           const b = boll(recentCloses);
-          t.updateLast(b);
+          t.updateBoll(b);
         } catch (err) {
           console.error("API Error:", err.code, err.message);
         }

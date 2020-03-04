@@ -30,12 +30,8 @@ export default class Trader {
     for (const w of this.workers) {
       w.notifyLast();
     }
-  }
-
-  updateBoll(boll: { upper: number; mid: number; lower: number }) {
-    this.boll = boll;
-    if (!this.last) return;
     if (
+      this.boll &&
       this.workers.length === 0 &&
       this.directionMode === DirectionMode.BOLL
     ) {
@@ -49,6 +45,17 @@ export default class Trader {
         console.log("BOLL is low, start sell.");
         this.start("SELL");
       }
+    }
+  }
+
+  updateBoll(boll: { upper: number[]; mid: number[]; lower: number[] }) {
+    this.boll = {
+      upper: boll.upper[boll.upper.length - 1],
+      mid: boll.mid[boll.mid.length - 1],
+      lower: boll.lower[boll.lower.length - 1]
+    };
+    if (this.last) {
+      console.log(`LAST/BOLL: ${this.last}/${this.boll.mid.toFixed(4)}`);
     }
   }
 
