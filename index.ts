@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import config, { initConfig } from "./config";
+import config, { initConfig, DirectionMode } from "./config";
 dotenv.config();
 initConfig();
 
@@ -35,41 +35,45 @@ const t = new Trader(
       t.fund = equity;
     }
 
-    const resCandle = (await api.get(
-      "swap/v3/instruments/ETH-USD-SWAP/candles",
-      {
-        params: {
-          start: moment()
-            .subtract(6, "hours")
-            .toISOString(),
-          end: moment().toISOString(),
-          granularity: 15 * 60
-        }
-      }
-    )) as string[][];
-    console.log(resCandle.length, "candles", resCandle[0]);
-    const recentCloses = resCandle
-      .map(k => +k[4])
-      .reverse()
-      .slice(-20);
-    const b = boll(recentCloses);
-    console.log(
-      "BOLL:",
-      round(b.upper[recentCloses.length - 1], 2),
-      round(b.mid[recentCloses.length - 1], 2),
-      round(b.lower[recentCloses.length - 1], 2)
-    );
+    if (config.directionMode === DirectionMode.BOLL) {
+      setInterval(async () => {
+        const resCandle = (await api.get(
+          "swap/v3/instruments/ETH-USD-SWAP/candles",
+          {
+            params: {
+              start: moment()
+                .subtract(6, "hours")
+                .toISOString(),
+              end: moment().toISOString(),
+              granularity: 15 * 60
+            }
+          }
+        )) as string[][];
+        const recentCloses = resCandle
+          .map(k => +k[4])
+          .reverse()
+          .slice(-20);
+        const b = boll(recentCloses);
+        t.updateLast(b);
+      }, 6e4); // Request K line data every 1 minute
+    }
   } catch (err) {
     console.log(err);
   }
 })();
 
-const startInterval = setInterval(() => {
-  if (t.last) {
-    // t.start();
-    clearInterval(startInterval);
-  }
-}, 3e3);
+if (
+  [DirectionMode.RANDOM, DirectionMode.BUY, DirectionMode.SELL].includes(
+    config.directionMode
+  )
+) {
+  const startInterval = setInterval(() => {
+    if (t.last) {
+      t.start();
+      clearInterval(startInterval);
+    }
+  }, 3e3);
+}
 
 wss.addEventListener("message", ({ data: raw }) => {
   let data: any = {};

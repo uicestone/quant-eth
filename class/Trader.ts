@@ -18,6 +18,7 @@ export default class Trader {
   }
 
   last?: number;
+  boll?: { upper: number; mid: number; lower: number };
 
   maxOpenWorkers = config.maxOpenWorkers;
   workers: Worker[] = [];
@@ -28,6 +29,26 @@ export default class Trader {
     this.last = price;
     for (const w of this.workers) {
       w.notifyLast();
+    }
+  }
+
+  updateBoll(boll: { upper: number; mid: number; lower: number }) {
+    this.boll = boll;
+    if (!this.last) return;
+    if (
+      this.workers.length === 0 &&
+      this.directionMode === DirectionMode.BOLL
+    ) {
+      if (this.last / this.boll.mid < 1 - config.spacing / config.lever) {
+        console.log("BOLL is high, start buy.");
+        this.start("BUY");
+      } else if (
+        this.last / this.boll.mid >
+        1 + config.spacing / config.lever
+      ) {
+        console.log("BOLL is low, start sell.");
+        this.start("SELL");
+      }
     }
   }
 
@@ -121,16 +142,17 @@ export default class Trader {
     );
   }
 
-  start(price?: number) {
-    let direction: "BUY" | "SELL";
-    if (this.directionMode === DirectionMode.BUY) {
-      direction = "BUY";
-    } else if (this.directionMode === DirectionMode.SELL) {
-      direction = "SELL";
-    } else if (this.directionMode === DirectionMode.RANDOM) {
-      direction = Math.random() > 0.5 ? "BUY" : "SELL";
-    } else {
-      throw `Direction mode ${this.directionMode} not supported.`;
+  start(direction?: "BUY" | "SELL", price?: number) {
+    if (!direction) {
+      if (this.directionMode === DirectionMode.BUY) {
+        direction = "BUY";
+      } else if (this.directionMode === DirectionMode.SELL) {
+        direction = "SELL";
+      } else if (this.directionMode === DirectionMode.RANDOM) {
+        direction = Math.random() > 0.5 ? "BUY" : "SELL";
+      } else {
+        throw `Direction mode ${this.directionMode} not supported.`;
+      }
     }
     console.log(
       `Start trade: ${direction === "SELL" ? "-" : ""}${this.lot}x${

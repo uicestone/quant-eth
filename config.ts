@@ -6,7 +6,8 @@ export enum DirectionMode {
   BUY = "BUY",
   SELL = "SELL",
   AUTO = "AUTO",
-  RANDOM = "RANDOM"
+  RANDOM = "RANDOM",
+  BOLL = "BOLL"
 }
 
 const config = {
