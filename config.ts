@@ -56,7 +56,8 @@ export function initConfig() {
       A: DirectionMode.AUTO,
       R: DirectionMode.RANDOM,
       B: DirectionMode.BUY,
-      S: DirectionMode.SELL
+      S: DirectionMode.SELL,
+      O: DirectionMode.BOLL
     };
     config.directionMode = map[d];
   }
@@ -77,7 +78,7 @@ function initArgs() {
     .showHelpOnFail(true)
     .option("direction-mode", {
       alias: "d",
-      describe: "开仓方向，可选B|S|A|R",
+      describe: "开仓方向，可选B|S|A|R|O",
       type: "string"
       // default: "R"
     })
