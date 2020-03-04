@@ -13,7 +13,14 @@ export default class Trader {
     public fund: number
   ) {
     setInterval(() => {
-      this.info();
+      if (this.profitRate < -config.overLoss) {
+        console.log(
+          `Profit rate ${this.profitRate} hit loss line, close all orders.`
+        );
+        this.terminateAndRestart();
+      }
+
+      console.log(this.info);
     }, 6e4); // 每60秒输出持仓信息
   }
 
@@ -55,7 +62,7 @@ export default class Trader {
       lower: boll.lower[boll.lower.length - 1]
     };
     if (this.last) {
-      console.log(`LAST/BOLL: ${this.last}/${this.boll.mid.toFixed(4)}`);
+      // console.log(`LAST/BOLL: ${this.last}/${this.boll.mid.toFixed(4)}`);
     }
   }
 
@@ -149,6 +156,13 @@ export default class Trader {
     );
   }
 
+  workerClosed(worker: Worker) {
+    const openWorkers = this.workers.filter(w => w.status === "OPEN");
+    if (openWorkers.length === 0) {
+      this.terminateAndRestart();
+    }
+  }
+
   start(direction?: "BUY" | "SELL", price?: number) {
     if (!direction) {
       if (this.directionMode === DirectionMode.BUY) {
@@ -191,6 +205,25 @@ export default class Trader {
     this.workers.push(w);
   }
 
+  async terminateAndRestart() {
+    this.fund += this.profit;
+    const madeOrderIds = this.orders
+      .filter(o => o.status === "MADE")
+      .map(o => o.id);
+    await api.post("swap/v3/cancel_batch_orders/ETH-USD-SWAP", {
+      client_oids: madeOrderIds
+    });
+    this.orders = [];
+    this.workers = [];
+    if (
+      [DirectionMode.RANDOM, DirectionMode.BUY, DirectionMode.SELL].includes(
+        config.directionMode
+      )
+    ) {
+      this.start();
+    }
+  }
+
   get profit() {
     return floor(this.openProfit + this.closedProfit, 6);
   }
@@ -215,7 +248,7 @@ export default class Trader {
     );
   }
 
-  info() {
+  get info() {
     const openWorkers = this.workers.filter(w => w.status === "OPEN");
     const closedWorkers = this.workers.filter(w => w.status === "CLOSED");
     const readyWorkers = this.workers.filter(w => w.status === "READY");
@@ -225,38 +258,10 @@ export default class Trader {
         return w.openOrder.summary;
       })
       .join("/");
-    console.info(
-      `Workers ${openWorkers.length}|${readyWorkers.length}|${
-        closedWorkers.length
-      }, ${openInfo || "-"}, Profit ${this.openProfit}/${this.closedProfit}, ${(
-        this.profitRate * 100
-      ).toFixed(2)}%, ${(this.fund + this.profit).toFixed(4)}.`
-    );
-    if (this.profitRate < -config.overLoss) {
-      console.log(
-        `Profit rate ${this.profitRate} hit loss line, close all orders.`
-      );
-      this.terminateAndRestart();
-    }
-  }
-
-  workerClosed(worker: Worker) {
-    const openWorkers = this.workers.filter(w => w.status === "OPEN");
-    if (openWorkers.length === 0) {
-      this.terminateAndRestart();
-    }
-  }
-
-  async terminateAndRestart() {
-    this.fund += this.profit;
-    const madeOrderIds = this.orders
-      .filter(o => o.status === "MADE")
-      .map(o => o.id);
-    await api.post("swap/v3/cancel_batch_orders/ETH-USD-SWAP", {
-      client_oids: madeOrderIds
-    });
-    this.orders = [];
-    this.workers = [];
-    this.start();
+    return `Workers ${openWorkers.length}|${readyWorkers.length}|${
+      closedWorkers.length
+    }, ${openInfo || "-"}, Profit ${this.openProfit}/${this.closedProfit}, ${(
+      this.profitRate * 100
+    ).toFixed(2)}%, ${(this.fund + this.profit).toFixed(4)}.`;
   }
 }
