@@ -18,10 +18,13 @@ const config = {
   maxOpenWorkers: 3, // 最大开单线程数
   usdPerAmount: 10, // 每张面值
   overLoss: 0.15, // 全仓止损线
+  makeOffset: 0.02, // 挂单偏移量，减少挂单变吃单可能
   fund: 0, // 本金
   apiKey: "", // OKEX API 鉴权信息
   secretKey: "",
   passphrase: "",
+  apiBase: "https://www.okex.com/api/",
+  webSocketUrl: "wss://real.okex.com:8443/ws/v3",
   mock: true
 };
 

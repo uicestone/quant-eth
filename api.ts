@@ -2,7 +2,7 @@ import axios from "axios";
 import config from "./config";
 import { HmacSHA256, enc } from "crypto-js";
 
-const apiBase = "https://www.okex.com/api/";
+const apiBase = config.apiBase;
 
 const client = axios.create({
   baseURL: apiBase,
@@ -38,11 +38,21 @@ client.interceptors.response.use(
   res => {
     return res.data;
   },
-  req => {
-    if (req.response.data.error_message) {
-      console.error(req.response.data.error_message);
+  err => {
+    const apiError = { code: "UNKNOWN", message: "API Error." };
+    if (err.response?.data.error_message) {
+      // api error log in logic code
+      apiError.code = err.response.data.code;
+      apiError.message = err.response.data.error_message;
+    } else if (err.message) {
+      // network error log here
+      console.error("Network error:", err.message);
+      apiError.code = err.code;
+      apiError.message = err.message;
+    } else {
+      console.error(err);
     }
-    return Promise.reject(req.response.data);
+    return Promise.reject(apiError);
   }
 );
 

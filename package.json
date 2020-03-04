@@ -10,7 +10,6 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@okfe/okex-node": "^0.0.52",
     "@types/crypto-js": "^3.1.43",
     "@types/pako": "^1.0.1",
     "@types/uuid": "^7.0.0",

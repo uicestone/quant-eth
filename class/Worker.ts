@@ -8,7 +8,7 @@ export default class Worker {
     this.trader = trader;
   }
   trader: Trader;
-  makeOffset = 0.02;
+  makeOffset = config.makeOffset;
   openOrder?: Order;
   closeOrder?: Order;
 

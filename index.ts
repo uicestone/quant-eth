@@ -12,10 +12,8 @@ import { HmacSHA256, enc } from "crypto-js";
 import { boll } from "finmath";
 import Trader from "./class/Trader";
 import api from "./api";
-import { round } from "./helpers";
 
-// const pClient = PublicClient();
-const wss = new ReconnectingWebSocket("wss://real.okex.com:8443/ws/v3", [], {
+const wss = new ReconnectingWebSocket(config.webSocketUrl, [], {
   WebSocket
 });
 
@@ -37,28 +35,32 @@ const t = new Trader(
 
     if (config.directionMode === DirectionMode.BOLL) {
       setInterval(async () => {
-        const resCandle = (await api.get(
-          "swap/v3/instruments/ETH-USD-SWAP/candles",
-          {
-            params: {
-              start: moment()
-                .subtract(6, "hours")
-                .toISOString(),
-              end: moment().toISOString(),
-              granularity: 15 * 60
+        try {
+          const resCandle = (await api.get(
+            "swap/v3/instruments/ETH-USD-SWAP/candles",
+            {
+              params: {
+                start: moment()
+                  .subtract(6, "hours")
+                  .toISOString(),
+                end: moment().toISOString(),
+                granularity: 15 * 60
+              }
             }
-          }
-        )) as string[][];
-        const recentCloses = resCandle
-          .map(k => +k[4])
-          .reverse()
-          .slice(-20);
-        const b = boll(recentCloses);
-        t.updateLast(b);
+          )) as string[][];
+          const recentCloses = resCandle
+            .map(k => +k[4])
+            .reverse()
+            .slice(-20);
+          const b = boll(recentCloses);
+          t.updateLast(b);
+        } catch (err) {
+          console.error("API Error:", err.code, err.message);
+        }
       }, 6e4); // Request K line data every 1 minute
     }
   } catch (err) {
-    console.log(err);
+    console.error("API Error:", err.code, err.message);
   }
 })();
 
@@ -154,5 +156,5 @@ wss.addEventListener("close", () => {
 });
 
 wss.addEventListener("error", ({ error }) => {
-  console.error(error);
+  console.error("WebSocket error:", error.message);
 });
