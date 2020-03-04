@@ -72,7 +72,7 @@ export default class Worker {
   notifyLast() {
     if (!this.trader.last) throw "no_price";
     if (config.mock) {
-      [(this.openOrder, this.closeOrder)].forEach((o, index) => {
+      [this.openOrder, this.closeOrder].forEach((o, index) => {
         if (!o) return;
         const state = o.state;
         const p = this.trader.last;
