@@ -7,7 +7,8 @@ export enum DirectionMode {
   SELL = "SELL",
   AUTO = "AUTO",
   RANDOM = "RANDOM",
-  BOLL = "BOLL"
+  BOLL = "BOLL",
+  BOLL_HL = "BOLL_HL"
 }
 
 const config = {
@@ -51,15 +52,8 @@ export function initConfig() {
   }
 
   if (argv.directionMode) {
-    const d = argv.directionMode as "A" | "R" | "B" | "S";
-    const map = {
-      A: DirectionMode.AUTO,
-      R: DirectionMode.RANDOM,
-      B: DirectionMode.BUY,
-      S: DirectionMode.SELL,
-      O: DirectionMode.BOLL
-    };
-    config.directionMode = map[d];
+    const directionMode = argv.directionMode as DirectionMode;
+    config.directionMode = directionMode;
   }
 
   if (!config.apiKey || !config.secretKey || !config.passphrase) {

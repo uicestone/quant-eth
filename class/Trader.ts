@@ -1,3 +1,4 @@
+import moment from "moment";
 import Worker from "./Worker";
 import Order from "./Order";
 import config, { DirectionMode } from "../config";
@@ -27,6 +28,12 @@ export default class Trader {
   last?: number;
   boll?: { upper: number; mid: number; lower: number };
 
+  /**
+   * time of last trade start,
+   * useful in BOLL_HL mode when we need a minimal open interval
+   */
+  startedAt?: Date;
+
   maxOpenWorkers = config.maxOpenWorkers;
   workers: Worker[] = [];
   orders: Order[] = [];
@@ -51,6 +58,21 @@ export default class Trader {
       ) {
         console.log("BOLL is low, start sell.");
         this.start("SELL");
+      }
+    }
+    if (
+      this.boll &&
+      this.workers.length < this.maxOpenWorkers &&
+      this.directionMode === DirectionMode.BOLL_HL &&
+      // start BOLL_HL at minimal interval of 15 minutes
+      (!this.startedAt || moment().diff(this.startedAt, "minutes", true) >= 15)
+    ) {
+      if (this.last > this.boll.upper) {
+        console.log("Price upper BOLL, start sell.");
+        this.start("SELL");
+      } else if (this.last < this.boll.lower) {
+        console.log("Price lower BOLL, start buy.");
+        this.start("BUY");
       }
     }
   }
@@ -183,9 +205,14 @@ export default class Trader {
     const w = new Worker(this);
     w.open(direction);
     this.workers.push(w);
+    this.startedAt = new Date();
   }
 
   requestBackup(worker: Worker) {
+    if (this.directionMode === DirectionMode.BOLL_HL) {
+      // We don't request backup in BOLL_HL mode.
+      return;
+    }
     if (
       this.workers.filter(w => w.status !== "CLOSED").length >=
       this.maxOpenWorkers

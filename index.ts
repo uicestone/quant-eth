@@ -33,7 +33,9 @@ const t = new Trader(
       t.fund = equity;
     }
 
-    if (config.directionMode === DirectionMode.BOLL) {
+    if (
+      [DirectionMode.BOLL, DirectionMode.BOLL_HL].includes(config.directionMode)
+    ) {
       setInterval(async () => {
         try {
           const resCandle = (await api.get(
