@@ -64,8 +64,9 @@ export default class Trader {
       this.boll &&
       this.workers.length < this.maxOpenWorkers &&
       this.directionMode === DirectionMode.BOLL_HL &&
-      // start BOLL_HL at minimal interval of 15 minutes
-      (!this.startedAt || moment().diff(this.startedAt, "minutes", true) >= 15)
+      // start BOLL_HL at minimal interval of 75 minutes (5 candles)
+      (!this.startedAt ||
+        moment().diff(this.startedAt, "minutes", true) >= 5 * 15)
     ) {
       if (this.last > this.boll.upper) {
         console.log("Price upper BOLL, start sell.");
