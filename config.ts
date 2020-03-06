@@ -44,16 +44,18 @@ export function initConfig() {
     }
   }
 
-  for (const key of ["lot", "spacing", "overLoss", "fund"]) {
+  for (const key of [
+    "directionMode",
+    "lot",
+    "spacing",
+    "overLoss",
+    "maxOpenWorkers",
+    "fund"
+  ]) {
     if (argv[key] !== undefined) {
       // @ts-ignore
       config[key] = argv[key];
     }
-  }
-
-  if (argv.directionMode) {
-    const directionMode = argv.directionMode as DirectionMode;
-    config.directionMode = directionMode;
   }
 
   if (!config.apiKey || !config.secretKey || !config.passphrase) {
@@ -88,13 +90,13 @@ function initArgs() {
       type: "number"
       // default: 0.1
     })
-    .option("overLoss", {
+    .option("over-loss", {
       alias: "o",
       describe: "全仓止损线",
       type: "number"
       // default: 0.15
     })
-    .option("max-workers", {
+    .option("max-open-workers", {
       alias: "m",
       describe: "最大开单线程数",
       type: "number"
