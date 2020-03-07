@@ -62,7 +62,8 @@ export default class Trader {
     }
     if (
       this.boll &&
-      this.workers.length < this.maxOpenWorkers &&
+      this.workers.filter(w => w.status === "OPEN").length <
+        this.maxOpenWorkers &&
       this.directionMode === DirectionMode.BOLL_HL &&
       // start BOLL_HL at minimal interval of 75 minutes (5 candles)
       (!this.startedAt ||
