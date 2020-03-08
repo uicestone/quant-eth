@@ -46,11 +46,26 @@ export default class Worker {
       if (direction === "BUY") price = this.trader.last - this.makeOffset;
       else price = this.trader.last + this.makeOffset;
     }
+
     const amount = this.trader.lot;
     this.openOrder = new Order(this, direction, "OPEN", price, amount);
     this.trader.orders.push(this.openOrder);
-    await this.openOrder.submit();
-    console.log(`OPEN order submit:`, this.openOrder.summary);
+
+    let pending = false;
+    if (
+      this.trader.workers.filter(w => w.status === "OPEN").length >=
+      this.trader.maxOpenWorkers
+    ) {
+      console.log("Max workers exceeded, backup pending.");
+      pending = true;
+    }
+
+    if (pending) {
+      console.log(`OPEN order pending:`, this.openOrder.summary);
+    } else {
+      await this.openOrder.submit();
+      console.log(`OPEN order submit:`, this.openOrder.summary);
+    }
   }
 
   async close() {
@@ -99,6 +114,8 @@ export default class Worker {
       } else {
         this.status = "CLOSED";
         this.trader.workerClosed(this);
+        // restart backup
+        this.trader.recoverOnePendingOrder();
       }
     }
   }

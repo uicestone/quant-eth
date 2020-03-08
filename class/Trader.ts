@@ -215,23 +215,24 @@ export default class Trader {
       // We don't request backup in BOLL_HL mode.
       return;
     }
-    if (
-      this.workers.filter(w => w.status !== "CLOSED").length >=
-      this.maxOpenWorkers
-    ) {
-      console.log("Max workers exceeded, backup failed.");
-      return;
-    }
-    const w = new Worker(this);
+    const backupWorker = new Worker(this);
     if (!worker.openOrder) throw "no_open_order";
-    w.open(
+    backupWorker.open(
       worker.openOrder.direction,
       worker.openOrder.price *
         (1 +
           (this.spacing / this.lever) *
             (worker.openOrder.direction === "BUY" ? -1 : 1))
     );
-    this.workers.push(w);
+    this.workers.push(backupWorker);
+  }
+
+  // search for orders PENDING_MAKE and re-try submit them
+  async recoverOnePendingOrder() {
+    const order = this.orders.find(o => o.status === "PENDING_MAKE");
+    if (!order) return;
+    await order.submit();
+    console.log("A pending order submitted.");
   }
 
   async terminateAndRestart() {
