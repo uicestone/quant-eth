@@ -53,7 +53,7 @@ export default class Worker {
 
     let pending = false;
     if (
-      this.trader.workers.filter(w => w.status === "OPEN").length >=
+      this.trader.workers.filter(w => w.status !== "CLOSED").length >=
       this.trader.maxOpenWorkers
     ) {
       console.log("Max workers exceeded, backup pending.");
