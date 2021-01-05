@@ -15,7 +15,7 @@
     "@types/uuid": "^7.0.0",
     "@types/ws": "^7.2.2",
     "@types/yargs": "^15.0.4",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "change-case": "^4.1.1",
     "class-transformer": "^0.2.3",
     "crypto-js": "^4.0.0",
